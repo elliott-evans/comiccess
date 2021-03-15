@@ -16,12 +16,34 @@ root.iconbitmap('oci.ico')
 
 #***     DEFINE VARIABLES     ***#
 search_entry = StringVar()
+tab_startup_status = True
 
 #***     DEFINE CLASSES     ***#
 
 
 #***     DEFINE FUNCTIONS     ***#
-
+def do_tab_switch_sales(event):
+    global tab_startup_status
+    if tab_startup_status == False:
+        modify_manage_stock_tab.forget()
+        modify_sales_tab.pack(side="left", fill="both", expand=True)
+        print("tab_switched")
+        tab_startup_status = True
+    else:
+        print('whoops')
+    print(event)
+    
+    
+def do_tab_switch_modify(event):
+    global tab_startup_status
+    if tab_startup_status == True:
+        modify_sales_tab.forget()
+        modify_manage_stock_tab.pack(side="left", fill="both", expand=True)
+        print("tab_switched")
+        tab_startup_status = False
+    else:
+        print('whoops')
+    print(event)
 
 #***     TKINTER WINDOW     ***#
 s = ttk.Style()
@@ -83,6 +105,8 @@ modify_sales_button = ttk.Frame(modify_parent)
 modify_sales_button.grid(row=0, column=0, padx=10, sticky=N)
 modify_sales_text = ttk.Label(modify_sales_button, text="SALES", font=("Bahnschrift", 25), anchor="n")
 modify_sales_text.pack()
+modify_sales_button.bind("<Button-1>", do_tab_switch_sales)
+modify_sales_text.bind("<Button-1>", do_tab_switch_sales)
 
 modify_row_divide = ttk.Separator(modify_parent, orient=VERTICAL)
 modify_row_divide.grid(row=0, column=1, sticky='ns', pady=5)
@@ -91,6 +115,8 @@ modify_manage_stock_button = ttk.Frame(modify_parent)
 modify_manage_stock_button.grid(row=0, column=2, padx=10, sticky="s")
 modify_manage_stock_text = ttk.Label(modify_manage_stock_button, text="MANAGE STOCK", font=("Bahnschrift", 25), anchor=N)
 modify_manage_stock_text.pack()
+modify_manage_stock_button.bind('<Button-1>', do_tab_switch_modify)
+modify_manage_stock_text.bind('<Button-1>', do_tab_switch_modify)
 
 modify_frames_parent = ttk.Frame(modify_parent)
 modify_frames_parent.grid(row=1, column=0, columnspan=3)
@@ -100,7 +126,12 @@ modify_parent.columnconfigure(0, weight=1)
 modify_parent.columnconfigure(2, weight=1)
 
 #* Modify Tab Frames *#
+modify_sales_tab = ttk.Frame(modify_frames_parent)
+modify_sales_tab.pack(side="left", fill="both", expand=True)
 
+modify_manage_stock_tab = ttk.Frame(modify_frames_parent)
+modify_manage_stock_tab.pack(side="left", fill="both", expand=True)
+modify_manage_stock_tab.forget()
     
 #***     RUN UPDATES & TKINTER WINDOW     ***#
 root.mainloop()
