@@ -10,15 +10,23 @@ from functools import partial
 root = Tk()
 root.title("Comiccess")
 root.iconbitmap('oci.ico')
-
-#***     LOAD DATA FROM FILES     ***#
-
+root.resizable(False, False)
 
 #***     DEFINE VARIABLES     ***#
 search_entry = StringVar()
 tab_startup_status = True
 
 #***     DEFINE CLASSES     ***#
+class Comic:
+    def __init__(self, series_name, vol_number, issue_name, in_stock, historical_sales):
+        self.series_name = series_name
+        self.vol_number = vol_number
+        self.issue_name = issue_name
+        self.full_title = str(series_name + ' Vol. ' + str(vol_number) + ': ' + issue_name)
+        self.in_stock = in_stock
+        self.historical_sales = historical_sales
+    
+#***     LOAD DATA FROM FILES     ***#
 
 
 #***     DEFINE FUNCTIONS     ***#
@@ -32,7 +40,6 @@ def do_tab_switch_sales(event):
     else:
         print('whoops')
     print(event)
-    
     
 def do_tab_switch_modify(event):
     global tab_startup_status
@@ -83,12 +90,7 @@ index_results_canvas = Canvas(index_results_parent)
 index_results_scrollbar = ttk.Scrollbar(index_results_parent, orient="vertical", command=index_results_canvas.yview)
 index_results_frame = ttk.Frame(index_results_canvas)
 
-index_results_frame.bind(
-    "<Configure>",
-    lambda e: index_results_canvas.configure(
-        scrollregion=index_results_canvas.bbox("all")
-    )
-)
+index_results_frame.bind("<Configure>", lambda e: index_results_canvas.configure(scrollregion=index_results_canvas.bbox("all")))
 
 index_results_canvas.create_window((0, 0), window=index_results_frame, anchor="nw")
 index_results_canvas.configure(yscrollcommand=index_results_scrollbar.set)
@@ -132,6 +134,8 @@ modify_sales_tab.pack(side="left", fill="both", expand=True)
 modify_manage_stock_tab = ttk.Frame(modify_frames_parent)
 modify_manage_stock_tab.pack(side="left", fill="both", expand=True)
 modify_manage_stock_tab.forget()
-    
+
+comic1 = Comic('Cpt. America', 1, 'A Beginning', 3, 6)
+
 #***     RUN UPDATES & TKINTER WINDOW     ***#
 root.mainloop()
