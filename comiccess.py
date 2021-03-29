@@ -15,19 +15,48 @@ root.resizable(False, False)
 #***     DEFINE VARIABLES     ***#
 search_entry = StringVar()
 tab_startup_status = True
+stock_items_class_list = []
 
 #***     DEFINE CLASSES     ***#
 class Comic:
-    def __init__(self, series_name, vol_number, issue_name, in_stock, historical_sales):
+    def __init__(self, series_name, vol_number, issue_name, in_stock, historical_sales, title_data, search_title):
         self.series_name = series_name
         self.vol_number = vol_number
         self.issue_name = issue_name
         self.full_title = str(series_name + ' Vol. ' + str(vol_number) + ': ' + issue_name)
+        self.search_title = self.full_title.strip()
         self.in_stock = in_stock
         self.historical_sales = historical_sales
+        self.title_data = title_data
+        self.search_title = search_title
+
+        self.index_frame = ttk.Frame(index_results_frame, relief=SUNKEN)
+        self.index_title = ttk.Label(self.index_frame, text=self.full_title, anchor=CENTER, font='Bahnschrift 10 bold').grid(column=0, row=0, columnspan=2, sticky="ew")
+        self.index_stock_label = ttk.Label(self.index_frame, text="In Stock", anchor=CENTER).grid(column=0, row=1, sticky="ew")
+        self.index_hist_label = ttk.Label(self.index_frame, text="Historic Sales", anchor=CENTER).grid(column=1, row=1, sticky="ew")
+        self.index_stock_item = ttk.Label(self.index_frame, text=self.in_stock, anchor=CENTER).grid(column=0, row=2, sticky="ew")
+        self.index_hist_item = ttk.Label(self.index_frame, text=self.historical_sales, anchor=CENTER).grid(column=1, row=2, sticky="ew")
     
 #***     LOAD DATA FROM FILES     ***#
-
+def load_stock_data():
+    with open('stock.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0:
+                print(f'Column names are {", ".join(row)}')
+                line_count += 1
+            else:
+                title_data = str(row[0] + ' Vol. ' + str(row[1]) + ': ' + row[2] + "\n - " + row[3] + " in stock, and " + row[4] + " have been sold.")
+                full_title_var = str(row[0] + str(row[1]) + row[2]).strip(",. ").lower().replace(",", "").replace(".", "").replace(" ","")
+                globals()[full_title_var] = Comic(row[0], row[1], row[2], row[3], row[4], title_data, full_title_var)
+                stock_items_class_list.append(list(globals().items())[-1])
+                line_count += 1
+        print(f'Processed {line_count-1} item/s.')
+        topline = ttk.Label(index_results_frame, text="––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––").pack()
+        for i in range(len(stock_items_class_list)):
+            stock_items_class_list[i][1].index_frame.pack()
+            ttk.Separator(index_results_frame, orient=HORIZONTAL).pack(fill="both", expand=True)
 
 #***     DEFINE FUNCTIONS     ***#
 def do_tab_switch_sales(event):
@@ -82,7 +111,7 @@ index_search.grid(row=1, column=1, padx=2, pady=10, sticky="nsew")
 index_parent.grid_columnconfigure(1, weight=80)
 
 index_results_parent = ttk.Frame(index_parent)
-index_results_parent.grid(row=2, column=0, columnspan=2, sticky="s")
+index_results_parent.grid(row=2, column=0, columnspan=2, sticky="s", padx=10)
 index_parent.grid_rowconfigure(2, weight=1)
 
 #* Index Results Frames *#
@@ -98,8 +127,7 @@ index_results_canvas.configure(yscrollcommand=index_results_scrollbar.set)
 index_results_canvas.pack(side="left", fill="both", expand=True)
 index_results_scrollbar.pack(side="right", fill="y")
 
-for i in range(50):
-    ttk.Label(index_results_frame, text="Sample scrolling label").pack()
+
 
 #* Modify Frames *#
 #* Modify Tab Button Frames *#
@@ -135,7 +163,6 @@ modify_manage_stock_tab = ttk.Frame(modify_frames_parent)
 modify_manage_stock_tab.pack(side="left", fill="both", expand=True)
 modify_manage_stock_tab.forget()
 
-comic1 = Comic('Cpt. America', 1, 'A Beginning', 3, 6)
-
 #***     RUN UPDATES & TKINTER WINDOW     ***#
+load_stock_data()
 root.mainloop()
