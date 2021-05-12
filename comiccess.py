@@ -23,6 +23,8 @@ stock_items_class_list = []
 series_list = {}
 series_select_list = [""]
 vol_select_list = []
+do_restore = False
+restore_var = ""
 
 selectitem_series_existing_var = StringVar()
 #***     DEFINE CLASSES     ***#
@@ -40,7 +42,7 @@ class Comic:
         if self.series_name not in series_list:
             series_list[self.series_name] = {self.vol_issue: self}
         elif self.series_name in series_list and self.vol_issue not in series_list[self.series_name]:
-            series_list[self.series_name].append({self.vol_issue: self})
+            series_list[self.series_name][self.vol_issue] = self
         else:
             result = messagebox.askquestion('Comic Duplicate Error','Instance of the {} comic already detected! Would you like to delete the duplicate item?'.format(self.full_title))
             if result=='yes':
@@ -57,18 +59,21 @@ class Comic:
         self.mod_hist_item = ttk.Label(self.item_frame, text=self.historical_sales, anchor=CENTER).grid(column=1, row=2, sticky="ew")
         self.item_frame.pack()
         
+        
     def clear_all():
         self.item_frame.forget_pack()
         del self
     
 #***     LOAD DATA FROM FILES     ***#
 def load_stock_data():
+    global stock_items_class_list, series_list, series_select_list, vol_select_list, do_restore
     for item in stock_items_class_list:
+        print("Wiped {}".format(item.full_title))
         item.clear_all()
     stock_items_class_list = []
     series_list = {}
     series_select_list = [""]
-    vol_select_list = []
+    vol_select_list = [""]
     with open('stock.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
@@ -88,6 +93,12 @@ def load_stock_data():
             stock_items_class_list[i][1].create_item_widget(index_results_frame)
             ttk.Separator(index_results_frame, orient=HORIZONTAL).pack(fill="both", expand=True)
         update_lists()
+    if do_restore == True:
+        if restore_var[0] == "modify":
+            pass
+        elif restore_var[0] == "sell":
+            pass
+        do_restore = False
 
 #***     DEFINE FUNCTIONS     ***#
 def update_lists():
@@ -96,6 +107,7 @@ def update_lists():
         series_select_list.append(item)
     selectitem_existing_series.config(values=series_select_list)
     selectitem_create_series.config(values=series_select_list)
+    sell_series_select_combobox.config(values=series_select_list)
     print("e{}".format(series_select_list))
 
 def do_tab_switch_sales(event):
@@ -108,6 +120,7 @@ def do_tab_switch_sales(event):
     else:
         print('whoops')
     print(event)
+    print(series_select_list)
     
 def do_tab_switch_modify(event):
     global tab_startup_status
@@ -119,6 +132,7 @@ def do_tab_switch_modify(event):
     else:
         print('whoops')
     print(event)
+    print(series_select_list)
 
 #* Comics Selection Functions *#
 def existing_series_selected(event):
@@ -249,6 +263,7 @@ def selectitem_apply_changes():
                 selectitem_existing_num_command("")
         print(series_list[selectitem_existing_series.get()][selectitem_existing_vol.get()].in_stock)
         if do_clear == True:
+            restore_var = ("modify",comic_class_instance.full_title)
             selectitem_existing_series.set("")
             existing_series_selected("")
             update_save_data()
@@ -266,7 +281,54 @@ def selectitem_apply_changes():
     else: 
         pass
 
+def sell_series_selected(event):
+    sell_comic_select_combobox.config(values=series_select_list)
+    selection = sell_series_select_combobox.get()
+    if selection == "":
+        sell_comic_select_combobox.config(values="", state='disabled')
+        sell_comic_select_combobox.set("")
+        sell_stock_data_parent.config(text="Comic")
+        sell_comic_selected("")
+    else:
+        values_list = [""]
+        comic_itemslist = series_list[sell_series_select_combobox.get()]
+        for k, v in comic_itemslist.items():
+            values_list.append(v.vol_issue)
+        sell_comic_select_combobox.config(values=values_list, state='readonly')
+        sell_comic_select_combobox.set("")
+        sell_comic_selected("")
+
+def sell_comic_selected(event):
+    if sell_comic_select_combobox.get() == "":
+        sell_stock_data_parent.config(text="Comic: ")
+        sell_stock_details_value.config(text=" - ")
+        sell_stock_historical_value.config(text=" - ")
+        sell_stock_button.config(state='disabled', text='Sell :::  \n')
+    else:
+        print(series_list[sell_series_select_combobox.get()][sell_comic_select_combobox.get()])
+        selected_item = series_list[sell_series_select_combobox.get()][sell_comic_select_combobox.get()]
+        sell_stock_data_parent.config(text=" {} ".format(selected_item.full_title))
+        sell_stock_details_value.config(text=" {} ".format(selected_item.in_stock))
+        sell_stock_historical_value.config(text=" {} ".format(selected_item.historical_sales))
+        sell_stock_button.config(state='normal', text='Sell ::: \n{}'.format(selected_item.full_title))
+
+def sell_stock_button():
+    pass
+    selected_item = series_list[sell_series_select_combobox.get()][sell_comic_select_combobox.get()]
+    print("Item in stock: {}".format(selected_item.in_stock))
+    clearitem = False
+    if selected_item.in_stock > 1:
+        selected_item.in_stock -= 1
+        clearitem = True
+    else:
+        messagebox.showerror('Out of stock!', 'It looks like that item is out of stock, sorry!')
+    print("Item in stock: {}".format(selected_item.in_stock))
+    if clearitem == True:
+        restore_var = ("sell",selected_item.full_title)
+        update_save_data()
+    
 def update_save_data():
+    do_restore = True
     print("Data (not) saved!")
     #load_stock_data()
 
@@ -292,16 +354,16 @@ root.grid_rowconfigure(0, weight=1)
 index_label = ttk.Label(index_parent, text="INDEX", font=("Bahnschrift", 25))
 index_label.grid(row=0, column=0, columnspan=2, sticky="n")
 
-index_search_label = ttk.Label(index_parent, text="Index Search:  ")
-index_search_label.grid(row=1, column=0, padx=2)
-index_parent.grid_columnconfigure(0, weight=1)
+#index_search_label = ttk.Label(index_parent, text="Index Search:  ")
+#index_search_label.grid(row=1, column=0, padx=2)
+#index_parent.grid_columnconfigure(0, weight=1)
 
-index_search = ttk.Entry(index_parent, textvariable=search_entry)
-index_search.grid(row=1, column=1, padx=2, pady=10, sticky="nsew")
-index_parent.grid_columnconfigure(1, weight=80)
+#index_search = ttk.Entry(index_parent, textvariable=search_entry)
+#index_search.grid(row=1, column=1, padx=2, pady=10, sticky="nsew")
+#index_parent.grid_columnconfigure(1, weight=80)
 
 index_results_parent = ttk.Frame(index_parent)
-index_results_parent.grid(row=2, column=0, columnspan=2, sticky="s", padx=10)
+index_results_parent.grid(row=1, column=0, columnspan=2, sticky="s", padx=10)
 index_parent.grid_rowconfigure(2, weight=1)
 
 #* Index Results Frames *#
@@ -425,10 +487,52 @@ selectitem_create_init_stock.bind("<KeyRelease>",created_comic_init_stock_select
 selectitem_apply_changes_button = ttk.Button(manage_stock_selectitem_parent, text="Apply Changes", command=selectitem_apply_changes, state='disabled', width=70)
 selectitem_apply_changes_button.grid(row=2, column=0, columnspan=3, pady=5)
 
+#* Sell Stock Parent Frames *#
+sell_stock_selectitem_parent = ttk.LabelFrame(modify_sales_tab, text="Select Comic To Sell")
+sell_stock_selectitem_parent.grid(row=0, column=0)
+
+sell_stock_data_parent = ttk.LabelFrame(modify_sales_tab, text="Comic: ", width=50)
+sell_stock_data_parent.grid(row=1, column=0, pady=7)
+
+# Sell Stock SelectItem #
+sell_series_select_label = ttk.Label(sell_stock_selectitem_parent, text="Select Series: |")
+sell_series_select_label.grid(row=0, column=0)
+
+sell_series_select_combobox = ttk.Combobox(sell_stock_selectitem_parent, values=series_select_list, state='readonly', width=54)
+sell_series_select_combobox.grid(row=0, column=1, columnspan=3, pady=5, padx=5)
+sell_series_select_combobox.bind("<<ComboboxSelected>>",sell_series_selected)
+
+sell_comic_select_label = ttk.Label(sell_stock_selectitem_parent, text="Select Comic: |")
+sell_comic_select_label.grid(row=1, column=0)
+
+sell_comic_select_combobox = ttk.Combobox(sell_stock_selectitem_parent, values="", state='disabled', width=54)
+sell_comic_select_combobox.grid(row=1, column=1, columnspan=3, pady=5, padx=5)
+sell_comic_select_combobox.bind("<<ComboboxSelected>>",sell_comic_selected)
+
+# Sell Stock Item Data #
+sell_stock_details_label = ttk.Label(sell_stock_data_parent, text="                         Current Stock: ")
+sell_stock_details_label.grid(row=0, column=0)
+
+sell_stock_details_value = ttk.Label(sell_stock_data_parent, text=" - ")
+sell_stock_details_value.grid(row=0, column=1)
+
+sell_stock_historical_label = ttk.Label(sell_stock_data_parent, text="                  Historical Sales: ")
+sell_stock_historical_label.grid(row=0, column=2)
+
+sell_stock_historical_value = ttk.Label(sell_stock_data_parent, text=" - ")
+sell_stock_historical_value.grid(row=0, column=3)
+
+sell_stock_spacer = ttk.Label(sell_stock_data_parent, text="                              ")
+sell_stock_spacer.grid(row=0, column=4)
+
+# Sell Stock Sell Button #
+sell_stock_button = Button(modify_sales_tab, text="Sell :::  \n", command=sell_stock_button, state='disabled', width=60, anchor=CENTER)
+sell_stock_button.grid(row=2, column=0, padx=5)
+
 #***     RUN UPDATES & TKINTER WINDOW     ***#
 do_tab_switch_modify("")
 do_tab_switch_sales("")
 load_stock_data()
 print("\n E")
-print(series_list)
+print(series_select_list)
 root.mainloop()
