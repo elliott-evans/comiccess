@@ -283,7 +283,6 @@ def selectitem_apply_changes(): # updates the data if the user is in the Modify 
         title_data = str(series_name + ' Vol. ' + vol_number + ': ' + issue_name + "\n - " + in_stock + " in stock, and " + "0" + " have been sold.")
         full_title_var = str(series_name + vol_number + issue_name).strip(",. ").lower().replace(",", "").replace(".", "").replace(" ","")
         stock_items_class_list.append(Comic(series_name, vol_number, issue_name, in_stock, 0)) # adds a new comic instance to the list
-        update_save_data() # triggers data save update
         if create_status == True:
             selectitem_create_series.set("")
             created_series_selected("")
@@ -291,6 +290,7 @@ def selectitem_apply_changes(): # updates the data if the user is in the Modify 
         else:
             selectitem_create_vol_entry.delete(0, END)
             created_vol_name_selected("")
+        update_save_data() # triggers data save update
     else: 
         pass
 
