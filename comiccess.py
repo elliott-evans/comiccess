@@ -332,6 +332,7 @@ def sell_stock_button():
         selected_item.in_stock -= 1
         selected_item.historical_sales += 1
         clearitem = True
+        messagebox.showinfo('Success!', 'You have sold an item of stock!') # 
     else:
         messagebox.showerror('Out of stock!', 'It looks like that item is out of stock, sorry!') # shows an error window
     if clearitem == True:
